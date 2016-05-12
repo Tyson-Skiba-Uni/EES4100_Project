@@ -1,4 +1,4 @@
-AC_INIT([tskiba], [0.1])                #filename is tskiba
+AC_INIT([modbus_client_ppc1], [0.1])    #filename is modbus_client_ppc1
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])               #not required but keeps things neat
 AC_CONFIG_HEADERS([config/config.h])    #neatness

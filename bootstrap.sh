@@ -3,3 +3,5 @@
 #Must be made Executable "chmod u+x ./bootstrap.sh"
 
 autoreconf --install              #Run This Command
+./configure
+make

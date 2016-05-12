@@ -1,3 +1,15 @@
+---- 13th of May 2016 Modbus Part 1 ----
+
+* MODbus Client Pulls Data from Device 34
+* MODbus Client can access all 4 sub devices
+* These devices represent atributes such as voltage and current
+* Removed all of the Unecisary Linked List Stuff
+* Will probably add at a later stage
+* Will tackle part two now "BACnet"
+* Updated Installation instructions
+
+
+
 ---- 12th of May 2016 Modbus Part 1 ----
 
 * Able to locally connect 

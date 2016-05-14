@@ -1,3 +1,12 @@
+---- 14th of May 2015 BACnet Part Two ----
+
+* BACnet Server Running By Itself
+* BACnet Client from KMTaylor GitHub set to Debug
+* Images moved into their own Dir
+* Both Programs can run at the same time but as differnt programs
+* Next Step is Linked List and Modbus/Bacnet Colaboration into the same Script
+
+
 ---- 13th of May 2016 Modbus Part 1 ----
 
 * MODbus Client Pulls Data from Device 34

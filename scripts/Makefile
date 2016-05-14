@@ -59,10 +59,10 @@ am__make_running_with_option = \
   test $$has_opt = yes
 am__make_dryrun = (target_option=n; $(am__make_running_with_option))
 am__make_keepgoing = (target_option=k; $(am__make_running_with_option))
-pkgdatadir = $(datadir)/modbus_client_pp1
-pkgincludedir = $(includedir)/modbus_client_pp1
-pkglibdir = $(libdir)/modbus_client_pp1
-pkglibexecdir = $(libexecdir)/modbus_client_pp1
+pkgdatadir = $(datadir)/bridge
+pkgincludedir = $(includedir)/bridge
+pkglibdir = $(libdir)/bridge
+pkglibexecdir = $(libexecdir)/bridge
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 install_sh_DATA = $(install_sh) -c -m 644
 install_sh_PROGRAM = $(install_sh) -c
@@ -87,7 +87,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config/config.h
+CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_$(V))
@@ -163,11 +163,11 @@ OBJDUMP = objdump
 OBJEXT = o
 OTOOL = 
 OTOOL64 = 
-PACKAGE = modbus_client_pp1
+PACKAGE = bridge
 PACKAGE_BUGREPORT = 
-PACKAGE_NAME = modbus_client_pp1
-PACKAGE_STRING = modbus_client_pp1 0.1
-PACKAGE_TARNAME = modbus_client_pp1
+PACKAGE_NAME = bridge
+PACKAGE_STRING = bridge 0.1
+PACKAGE_TARNAME = bridge
 PACKAGE_URL = 
 PACKAGE_VERSION = 0.1
 PATH_SEPARATOR = :

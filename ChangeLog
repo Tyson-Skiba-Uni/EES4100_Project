@@ -1,4 +1,13 @@
----- 14th of May 2015 BACnet Part Two ----
+---- 15th of May 2016 BACnet MODbus Bridge ----
+
+* BACnet Server Runs as per Normal
+* MODbus Client now has its own thread
+* Code files for standalone will probably be removed
+* For testing use Bridge
+* Linked List is Next To Do
+* Have not done the MODbus loop yet will do with the two way linked list
+
+---- 14th of May 2016 BACnet Part Two ----
 
 * BACnet Server Running By Itself
 * BACnet Client from KMTaylor GitHub set to Debug

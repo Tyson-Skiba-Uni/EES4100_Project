@@ -8,8 +8,12 @@ Todays Focus is
 * Two Way Linked List
 * Cleaning Up Directories
 * No Warnings for Bootstrap Shell Script 
-	* Return arg for modbus
 * Neat Code
+
+Nightly
+* MODbus Error Goto was working
+* Now getting Memory Dumps
+* Did Not Start on Linked List Yet
 
 ##Installation
 

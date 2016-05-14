@@ -7,6 +7,10 @@
 * Linked List is Next To Do
 * Have not done the MODbus loop yet will do with the two way linked list
 
+* Was Working Now Errors
+* Error Control for MODbus
+* Still requires Linked List, Infastructure is there MODbus just doesnt use it yet
+
 ---- 14th of May 2016 BACnet Part Two ----
 
 * BACnet Server Running By Itself

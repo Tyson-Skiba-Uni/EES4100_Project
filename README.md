@@ -19,7 +19,7 @@ $ ./bootstrap.sh
 
 ###Part One is Now Complete
 
-![alt tag](https://raw.githubusercontent.com/Tyson-Skiba-Uni/EES4100_Project/master/Images/PartTwo.png)
+![alt tag](https://raw.githubusercontent.com/Tyson-Skiba-Uni/EES4100_Project/master/Images/partTwo.png)
 BACnet Running Indepdantly
 
 **Tyson Skiba 2016**

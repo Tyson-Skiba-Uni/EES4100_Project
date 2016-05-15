@@ -5,15 +5,18 @@ Victoria University Project
 
 Todays Focus is
 * MODbus Loop, Add to L. List Tail
-* Two Way Linked List
+* Two Way Linked List (MODbus Tail|BACnet Head)
 * Cleaning Up Directories
 * No Warnings for Bootstrap Shell Script 
+	* Currently i have warning for unused linked list functions
+	* These will be used soon
 * Neat Code
+* Started Looking into Make Dist
 
 Nightly
-* MODbus Error Goto was working
-* Now getting Memory Dumps
-* Did Not Start on Linked List Yet
+* MODbus working again
+* Waits a second the  tries to reconect
+* Did Not Start on Linked List Yet will start will the Tail
 
 ##Installation
 

@@ -1,3 +1,11 @@
+---- 16th of May 2016 Bacnet MODbus Bridge ----
+
+* No More Memory Dumps
+* Using Goto instead of nested loops
+* MODbus thread Loops
+* Next up Linked List Tail (MODbus Insertion)
+* Later Linked List Head (BACnet Read) 
+
 ---- 15th of May 2016 BACnet MODbus Bridge ----
 
 * BACnet Server Runs as per Normal

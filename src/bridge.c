@@ -28,7 +28,7 @@
 #define BACNET_PORT		    0xBAC1						// BACnet Port 1
 #define BACNET_INTERFACE	    "lo"						// BACnet Local Interface
 #define BACNET_DATALINK_TYPE	    "bvlc"						// BACnet Layer Type
-#define BACNET_SELECT_TIMEOUT_MS    1	    						// BACnet 1 milliseond timeout
+#define BACNET_SELECT_TIMEOUT_MS    1	    						// BACnet1 milliseond timeout
 
 #define RUN_AS_BBMD_CLIENT	    1							// BACnet Run as BBMD Client (Bool)
 
@@ -42,7 +42,7 @@
 
 #define MODBUS_SERVER_ADR	"127.0.0.1" 						// Modbus server location (local)
 #define MODBUS_SERVER_PORT	502							// Modbus port  
-#define MODBUS_DEVICE_ID	12							// Modbus Device as Provided by Kim (12,34)
+#define MODBUS_DEVICE_ID	12							// Modbus Device as Provided by Kim (12 testing,34 ME)
 #define MODBUS_DEVICE_INST	3							// Modbus Device Instances as Provided by Kim
 
 struct list_object_s {									// L.LIST Structure with 3 members
@@ -56,11 +56,46 @@ static uint16_t test_data[] = {								// Define a static test data array
     0xA4EC, 0x6E39, 0x8740, 0x1065, 0x9134, 0xFC8C };					// Test data to provide to client
 #define NUM_TEST_DATA (sizeof(test_data)/sizeof(test_data[0]))
 
-static struct list_object_s *list_head;							// L.LIST Global Structure pointing to list head
 static pthread_mutex_t timer_lock = PTHREAD_MUTEX_INITIALIZER;				// Initialise PThread
 static pthread_mutex_t list_lock = PTHREAD_MUTEX_INITIALIZER;				// 
 static pthread_cond_t list_data_ready = PTHREAD_COND_INITIALIZER;			// 
 static pthread_cond_t list_data_flush = PTHREAD_COND_INITIALIZER;			// 
+static struct list_object_s *list_head;							// L.LIST Global Structure pointing to list head
+
+static void add_to_list(char *input) {							// Input is a Charecter Pointer
+    struct list_object_s *last_item;							// Point to the last item
+    struct list_object_s *new_item = malloc(sizeof(struct list_object_s));		// Alloc Memory for the Size of the Structure
+    if (!new_item) {									// If there are no new items
+        fprintf(stderr, "Memory Alocation has Failed, Aborting\n");			// Print Memory Aloocation Error to Standard Error
+        exit(1);									// Exit the Application
+    }											// Missing a damn bracket 
+											// -> is member of a structure
+    new_item->string = strdup(input);							// place value of input into new_item.string
+    new_item->strlen = strlen(input);							// place value of input length into new_item.strlen
+    new_item->next = NULL;
+
+    pthread_mutex_lock(&list_lock);							// Take the lock to protect from corruption as data is about to be modified
+
+    if (list_head == NULL) {								// If no list head exists (first run)...
+        list_head = new_item;								// ...Create an Object
+    } else {										// For Every Other Possible Condition ie Data Exists...
+        last_item = list_head;								// Move the pointer to the current item (list head)
+        while (last_item->next) last_item = last_item->next;
+        last_item->next = new_item;							// Make the new item the bottom of the list
+    }
+
+    pthread_cond_signal(&list_data_ready);						// Tell the function that Data can now be free'd
+    pthread_mutex_unlock(&list_lock);							// Release Thread Lock
+}	
+
+static struct list_object_s *list_get_first(void) {				
+    struct list_object_s *first_item;							// Define struture with one element						
+
+    first_item = list_head;								// Make the top item in the list the list head pointer
+    list_head = list_head->next;							// Make the first item the next value
+
+    return first_item;									// Return the first_item value
+}
 
 static int Update_Analog_Input_Read_Property( BACNET_READ_PROPERTY_DATA *rpdata) {	// Function for Analogue Input
 
@@ -140,59 +175,53 @@ void *MODBUS_client(void *arg) {								// MODbus Thread Function
 	int aquire,i;										// Integer for Aquiring data from modbus, counter value i (reuse)
 	uint16_t  j[256];									// Buffer j for storing data, MODbus read wants 16 bit number
 	modbus_t *ctx; 
-
-	reinit:											// No Error Control for Modbus so must be implemented, GoTo Loop
-		ctx = modbus_new_tcp(MODBUS_SERVER_ADR, MODBUS_SERVER_PORT);			// Create libmodbus content (First Input uses IPv4 Address)
-
+	initialise:										// Label for goto
+	ctx = modbus_new_tcp(MODBUS_SERVER_ADR, MODBUS_SERVER_PORT);				// Create libmodbus content (First Input uses IPv4 Address)
+	if (ctx == NULL)									// If ctx if empty
+	{
+		fprintf(stderr, "MODbus Could Not be Created\n");				// Error message if unable to execute command
+		modbus_free(ctx);								// Free Modbus Open Ports and IP
+		modbus_close(ctx);								// Close Modbus
+		sleep(1);									// Do Nothing for 1 second
+		goto initialise;								// Return to the label 'initialise'
+ 	}
 	
-		if (ctx == NULL)								// If ctx if empty
-		{
-			fprintf(stderr, "MODbus Could Not be Created\n");			// Error message if unable to execute command
-			modbus_free(ctx); 							// Free MODbus IP and Port 
-	      		modbus_close(ctx);							// Close MODbus
-			sleep(1);								// Stop this thread for 1 second
-			goto reinit;								// GoTo the reinit point
-		}
-		else
-		{
-			printf("MODbus was Created\n");						// Print Success to STDOUT
-		}
+	printf("MODbus was Created\n");								// Print Success to STDOUT
 
-		if (modbus_connect(ctx) == -1)							// If a connection could not be established
-		{					
-			fprintf(stderr, "Connection not Established\n"); 			// Tell the user
-			modbus_free(ctx);							// Release the IP Address and Port	
-			modbus_free(ctx); 							// Free MODbus IP and Port 
-	      		modbus_close(ctx);							// Close MODbus
-			sleep(1);								// Stop this thread for 1 second
-			goto reinit;								// GoTo the reinit point
-		}
+	if (modbus_connect(ctx) == -1)								// If a connection could not be established
+	{				
+		fprintf(stderr, "Connection not Established\n"); 				// Tell the user
+		modbus_free(ctx);								// Free Modbus Open Ports and IP
+		modbus_close(ctx);								// Close Modbus
+		sleep(1);									// Do Nothing for 1 second
+		goto initialise;								// Return to the label 'initialise'
+	}
 
-		else										// For all other circumstances
-		{
-			printf("Connection has been Established\n");				// Tell User Connection has been Made
-		}
+	else											// For all other circumstances
+	{
+		printf("Connection has been Established\n");					// Tell User Connection has been Made
+	}
 
 	aquire=modbus_read_registers(ctx, 34, 4, j);						// Aquire will be negative if there is an error
 
 	if (aquire<0)										// Aquired Values are less then 0
 	{
 		printf("Could not Pull Data From Server\n");					// Print Errror Message
-		modbus_free(ctx);								// Release IP and Port
-		return arg;									// Return -1 (Error)
+		modbus_free(ctx);								// Free Modbus Open Ports and IP
+		modbus_close(ctx);								// Close Modbus
+		goto initialise;								// Return to the label 'initialise'
 	}
-	
+
 	//printf("Current I Value is %d \nCurrent Aquired Status is %d",i,aquire); //debug
 
 	for (i = 0; i < aquire; i++)
 	{
 		printf("reg[%d]=%d (0x%X)\n", i, j[i], j[i]);
-		// Try to Add Data into the Arese EndList Here
 	}
 	
 	modbus_close(ctx);									// Close Connection
 	modbus_free(ctx);									// Free IP and Port
-	return arg;										// Has to return something arg will work
+	return NULL;										// Nothing to return
 }
 
 static void *minute_tick(void *arg) {								// Minute Thread Function
@@ -216,13 +245,36 @@ static void *second_tick(void *arg) {								// Second Thread Function
 	bacnet_bvlc_maintenance_timer(1);							// Invalidates stale BBMD foreign device table entries 
 	bacnet_tsm_timer_milliseconds(1000);							// Transmission State Machine control Acknowlegement and ReTransmissions
 
+	/* Re-enables communications after DCC_Time_Duration_Seconds
+	 * Required for SERVICE_CONFIRMED_DEVICE_COMMUNICATION_CONTROL
+	 * bacnet_dcc_timer_seconds(1); */
+
+	/* State machine for load control object
+	 * Required for OBJECT_LOAD_CONTROL
+	 * bacnet_Load_Control_State_Machine_Handler(); */
+
+	/* Expires any COV subscribers that have finite lifetimes
+	 * Required for SERVICE_CONFIRMED_SUBSCRIBE_COV
+	 * bacnet_handler_cov_timer_seconds(1); */
+
+	/* Monitor Trend Log uLogIntervals and fetch properties
+	 * Required for OBJECT_TRENDLOG
+	 * bacnet_trend_log_timer(1); */
+	
+	/* Run [Object_Type]_Intrinsic_Reporting() for all objects in device
+	 * Required for INTRINSIC_REPORTING
+	 * bacnet_Device_local_reporting(); */
+	
 	pthread_mutex_unlock(&timer_lock);							// Release Lock
 	sleep(1);										// Sleep for 1 Second
     }
     return arg;
 }
 
-static void ms_tick(void) {									
+static void ms_tick(void) {									// millisecond function
+    /* Updates change of value COV subscribers.
+     * Required for SERVICE_CONFIRMED_SUBSCRIBE_COV
+     * bacnet_handler_cov_task(); */
 }
 
 #define BN_UNC(service, handler) \
@@ -234,47 +286,12 @@ static void ms_tick(void) {
 		    SERVICE_CONFIRMED_##service,	\
 		    bacnet_handler_##handler)
 
-static void add_to_list(char *input) {								// Input is a Charecter Pointer
-    struct list_object_s *last_item;								// Point to the last item
-    struct list_object_s *new_item = malloc(sizeof(struct list_object_s));			// Alloc Memory for the Size of the Structure
-    if (!new_item) {										// If there are no new items
-        fprintf(stderr, "Memory Alocation has Failed, Aborting\n");				// Print Memory Aloocation Error to Standard Error
-        exit(1);										// Exit the Application
-    }
-												// -> is member of a structure
-    new_item->string = strdup(input);								// place value of input into new_item.string
-    new_item->strlen = strlen(input);								// place value of input length into new_item.strlen
-    new_item->next = NULL;
-
-    pthread_mutex_lock(&list_lock);								// Take the lock to protect from corruption as data is about to be modified
-
-    if (list_head == NULL) {									// If no list head exists (first run)...
-        list_head = new_item;									// ...Create an Object
-    } else {											// For Every Other Possible Condition ie Data Exists...
-        last_item = list_head;									// Move the pointer to the current item (list head)
-        while (last_item->next) last_item = last_item->next;
-        last_item->next = new_item;								// Make the new item the bottom of the list
-    }
-
-    pthread_cond_signal(&list_data_ready);							// Tell the function that Data can now be free'd
-    pthread_mutex_unlock(&list_lock);								// Release Thread Lock
-}	
-
-static struct list_object_s *list_get_first(void) {				
-    struct list_object_s *first_item;								// Define struture with one element						
-
-    first_item = list_head;									// Make the top item in the list the list head pointer
-    list_head = list_head->next;								// Make the first item the next value
-
-    return first_item;										// Return the first_item value
-}
-
 int main(int argc, char **argv) {								// Main Function, Execution will begin here 
     uint8_t rx_buf[bacnet_MAX_MPDU];								// BACnet Initialise recieved data buffer
     uint16_t pdu_len;										// BACnet Initialise pdu length
     BACNET_ADDRESS src;
     pthread_t minute_tick_id, second_tick_id;							// BACnet Declare Threads
-    pthread_t MODBUS_client_thread;									// MODbus Thread
+    pthread_t MODBUS_client_thread;								// MODbus Thread
 
     bacnet_Device_Set_Object_Instance_Number(BACNET_INSTANCE_NO);				// BACnet Set the Instance Number
     bacnet_address_init();									// BACnet Initialise BACnet
@@ -319,7 +336,7 @@ int main(int argc, char **argv) {								// Main Function, Execution will begin 
 	    bacnet_npdu_handler(&src, rx_buf, pdu_len);						// Handle Messaging
 	    pthread_mutex_unlock(&timer_lock);							// Release Lock
 	}
-	
+
 	ms_tick();										// Run the millisecond tick function
 	MODBUS_client(NULL);									// Keep Running Modbus Thread
     }

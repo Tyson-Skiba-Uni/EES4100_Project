@@ -43,11 +43,11 @@ if make; then
 	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
 	title="^" 
 	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
-	title="MODbus Server (ME)" 
+	title="MODbus Client (ME)" 
 	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
 	title="|" 
 	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
-	title="MODbus Client" 
+	title="MODbus Server" 
 	printf "%*s\n" $(((${#title}+$COLUMNS)/2)) "$title"
 	echo
 	printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -

@@ -304,7 +304,7 @@ int main(int argc, char **argv) {								// Main Function, Execution will begin 
     bacnet_bip_set_port(htons(BACNET_PORT));							// BACnet Convert to Network Style IP and Set IP 
     bacnet_datalink_set(BACNET_DATALINK_TYPE);							// BACnet Set the Datalink Type
     bacnet_datalink_init(BACNET_INTERFACE);							// BACnet Set the Interface Type
-    atexit(bacnet_datalink_cleanup);								// BACnet Run bacnet_datalink_cleanup when program is terminated
+    atexit(bacnet_datalink_cleanup);								// BACnet Run bacnet_datalink_cleanup when program is terminated // Put LList Clean Here
     memset(&src, 0, sizeof(src));								// BACnet Fill src memory with 0
 
     register_with_bbmd();									// BACnet Register on the BBMD (TTL is 60)
@@ -314,18 +314,7 @@ int main(int argc, char **argv) {								// Main Function, Execution will begin 
     pthread_create(&minute_tick_id, 0, minute_tick, NULL);					// BACnet Create the minute thread
     pthread_create(&second_tick_id, 0, second_tick, NULL);					// BACnet Create the second thread
     pthread_create(&MODBUS_client_thread,0, MODBUS_client, NULL);				// MODbus Create its Thread
-    
-    /* Start another thread here to retrieve your allocated registers from the
-     * modbus server. This thread should have the following structure (in a
-     * separate function):
-     *
-     * Initialise:
-     *	    Connect to the modbus server
-     *
-     * Loop:
-     *	    Read the required number of registers from the modbus server
-     *	    Store the register data into the tail of a linked list 
-     */
+
 
     while (1) {
 	pdu_len = bacnet_datalink_receive(							// Set Packet Data Unit Length

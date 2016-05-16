@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <modbus-tcp.h>
 
+#include "list.h"
+
 //BACnet Define
 											
 #define BACNET_INSTANCE_NO	    34							// BACnet Provided by University
@@ -175,52 +177,55 @@ void *MODBUS_client(void *arg) {								// MODbus Thread Function
 	int aquire,i;										// Integer for Aquiring data from modbus, counter value i (reuse)
 	uint16_t  j[256];									// Buffer j for storing data, MODbus read wants 16 bit number
 	modbus_t *ctx; 
-	initialise:										// Label for goto
-	ctx = modbus_new_tcp(MODBUS_SERVER_ADR, MODBUS_SERVER_PORT);				// Create libmodbus content (First Input uses IPv4 Address)
-	if (ctx == NULL)									// If ctx if empty
-	{
-		fprintf(stderr, "MODbus Could Not be Created\n");				// Error message if unable to execute command
-		modbus_free(ctx);								// Free Modbus Open Ports and IP
-		modbus_close(ctx);								// Close Modbus
-		sleep(1);									// Do Nothing for 1 second
-		goto initialise;								// Return to the label 'initialise'
- 	}
+	while(1){										// MODbus Everloop
+initialise:											// Label for goto
+		ctx = modbus_new_tcp(MODBUS_SERVER_ADR, MODBUS_SERVER_PORT);			// Create libmodbus content (First Input uses IPv4 Address)
+		if (ctx == NULL)								// If ctx if empty
+		{
+			fprintf(stderr, "MODbus Could Not be Created\n");			// Error message if unable to execute command
+			modbus_free(ctx);							// Free Modbus Open Ports and IP
+			modbus_close(ctx);							// Close Modbus
+			sleep(1);								// Do Nothing for 1 second
+			goto initialise;							// Return to the label 'initialise'
+ 		}
 	
-	printf("MODbus was Created\n");								// Print Success to STDOUT
+		printf("MODbus was Created\n");							// Print Success to STDOUT
 
-	if (modbus_connect(ctx) == -1)								// If a connection could not be established
-	{				
-		fprintf(stderr, "Connection not Established\n"); 				// Tell the user
-		modbus_free(ctx);								// Free Modbus Open Ports and IP
-		modbus_close(ctx);								// Close Modbus
-		sleep(1);									// Do Nothing for 1 second
-		goto initialise;								// Return to the label 'initialise'
-	}
+		if (modbus_connect(ctx) == -1)							// If a connection could not be established
+		{				
+			fprintf(stderr, "Connection not Established\n"); 			// Tell the user
+			modbus_free(ctx);							// Free Modbus Open Ports and IP
+			modbus_close(ctx);							// Close Modbus
+			sleep(1);								// Do Nothing for 1 second
+			goto initialise;							// Return to the label 'initialise'
+		}
 
-	else											// For all other circumstances
-	{
-		printf("Connection has been Established\n");					// Tell User Connection has been Made
-	}
+		else										// For all other circumstances
+		{
+			printf("Connection has been Established\n");				// Tell User Connection has been Made
+		}
 
-	aquire=modbus_read_registers(ctx, 34, 4, j);						// Aquire will be negative if there is an error
+		aquire=modbus_read_registers(ctx, 34, 4, j);					// Aquire will be negative if there is an error
 
-	if (aquire<0)										// Aquired Values are less then 0
-	{
-		printf("Could not Pull Data From Server\n");					// Print Errror Message
-		modbus_free(ctx);								// Free Modbus Open Ports and IP
-		modbus_close(ctx);								// Close Modbus
-		goto initialise;								// Return to the label 'initialise'
-	}
+		if (aquire<0)									// Aquired Values are less then 0
+		{
+			printf("Could not Pull Data From Server\n");				// Print Errror Message
+			modbus_free(ctx);							// Free Modbus Open Ports and IP
+			modbus_close(ctx);							// Close Modbus
+			goto initialise;							// Return to the label 'initialise'
+		}
 
 	//printf("Current I Value is %d \nCurrent Aquired Status is %d",i,aquire); //debug
 
-	for (i = 0; i < aquire; i++)
-	{
-		printf("reg[%d]=%d (0x%X)\n", i, j[i], j[i]);
-	}
+		for (i = 0; i < aquire; i++)
+		{
+			printf("reg[%d]=%d (0x%X)\n", i, j[i], j[i]);
+		}
 	
-	modbus_close(ctx);									// Close Connection
-	modbus_free(ctx);									// Free IP and Port
+		modbus_close(ctx);								// Close Connection
+		modbus_free(ctx);								// Free IP and Port
+		sleep(1);									// Sleep for 100 ms on Final Project 
+	}
 	return NULL;										// Nothing to return
 }
 
@@ -327,8 +332,8 @@ int main(int argc, char **argv) {								// Main Function, Execution will begin 
 	}
 
 	ms_tick();										// Run the millisecond tick function
-	MODBUS_client(NULL);									// Keep Running Modbus Thread
     }
 
     return 0;											// Return 0
 }
+

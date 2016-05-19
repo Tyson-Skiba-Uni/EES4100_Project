@@ -1,3 +1,12 @@
+----     20th of May 2016 Linked List      ----
+
+* MODbus Loops Properly (While Loop Internally)
+* Linked List is built bottom up
+* MODbus Client reads data
+* MODbus Client adds data to linked list tail
+* BACnet serves first value
+* BACnet triggers memory cleaning and destruction of element
+
 ---- 16th of May 2016 Bacnet MODbus Bridge ----
 
 * No More Memory Dumps

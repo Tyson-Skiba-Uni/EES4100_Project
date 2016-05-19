@@ -4,12 +4,8 @@ Victoria University Project
 ###Currently Underway 
 
 Todays Focus is
-* MODbus Loop, Add to L. List Tail
-* Two Way Linked List (MODbus Tail|BACnet Head)
-* Cleaning Up Directories
-* No Warnings for Bootstrap Shell Script 
-	* Currently i have warning for unused linked list functions
-	* These will be used soon
+* Need to Work Out if i need to Iterate through Instances
+* Hoping to have the Server Match Data this Week
 * Neat Code
 * Started Looking into Make Dist
 

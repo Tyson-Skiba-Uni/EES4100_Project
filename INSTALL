@@ -1,2 +1,3 @@
-Will Need to Use Bootstrap
-Once Working Tar Ball Installation Dist?
+$ git clone https://github.com/Tyson-Skiba-Uni/EES4100_Project   
+$ cd ./EES4100_Project 
+$ ./bootstrap.sh    

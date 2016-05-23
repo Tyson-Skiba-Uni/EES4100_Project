@@ -1,5 +1,5 @@
 // Tyson Skiba 2016
-// BACnet Server with MODbus Client | ProjectPart5
+// BACnet Server with MODbus Client | ProjectPart6 QuadLinkedList
 
 #include <stdio.h>									// Standard Input Output Library
 #include <libbacnet/address.h>								// BACnet Libraries
@@ -54,6 +54,16 @@ struct linked_list									// L.LIST Structure to Hold List Elements
 struct linked_list ll;									// L.LIST Create Initial Object
 struct linked_list* ll_current_item; 							// L.LIST Create Pointer to the Current Item
 
+
+struct linked_list ll0;									// L.LIST Create Initial Object
+struct linked_list* ll0_current_item; 							// L.LIST Create Pointer to the Current Item
+struct linked_list ll1;									// L.LIST Create Initial Object
+struct linked_list* ll1_current_item; 							// L.LIST Create Pointer to the Current Item
+struct linked_list ll2;									// L.LIST Create Initial Object
+struct linked_list* ll2_current_item; 							// L.LIST Create Pointer to the Current Item
+struct linked_list ll3;									// L.LIST Create Initial Object
+struct linked_list* ll3_current_item; 							// L.LIST Create Pointer to the Current Item
+
 static void ll_free_item(struct linked_list* item,struct linked_list ll_list){		// L.LIST Function to Delete Element
     item = list_entry(ll_list.list.next,struct linked_list,list);			// Get the target element
     list_del(&item->list);								// Remove using this function
@@ -103,12 +113,42 @@ static int Update_Analog_Input_Read_Property( BACNET_READ_PROPERTY_DATA *rpdata)
     
     
     pthread_mutex_lock(&list_lock);							// L.LIST Lock Thread to prevent possible modification while read
-    if(!list_empty(&ll.list)){								// L.LIST Check for Avaliable Data
-	list_for_each_entry(ll_current_item,&ll.list,list) 				//L.LIST Get Data From Current Object
+// for loop here for 4 linked list
+    if(!list_empty(&ll0.list)){								// L.LIST Check for Avaliable Data
+
+	list_for_each_entry(ll0_current_item,&ll0.list,list) 				// L.LIST Get Data From Current Object
 	{
-           bacnet_Analog_Input_Present_Value_Set(instance_no, ll_current_item->data_value); // BACnet Send Over Bacnet
+           bacnet_Analog_Input_Present_Value_Set(0, ll0_current_item->data_value); // BACnet Send Over Bacnet
 	}
-        ll_free_item(ll_current_item,ll);						// Free the current Item					
+        ll_free_item(ll0_current_item,ll0);						// Free the current Item					
+    }
+
+    if(!list_empty(&ll1.list)){								// L.LIST Check for Avaliable Data
+
+	list_for_each_entry(ll1_current_item,&ll1.list,list) 				// L.LIST Get Data From Current Object
+	{
+           bacnet_Analog_Input_Present_Value_Set(1, ll1_current_item->data_value); // BACnet Send Over Bacnet
+	}
+        ll_free_item(ll1_current_item,ll1);						// Free the current Item
+	printf("Printed and Freed %d\n",instance_no);					
+    }
+
+    if(!list_empty(&ll2.list)){								// L.LIST Check for Avaliable Data
+
+	list_for_each_entry(ll2_current_item,&ll2.list,list) 				// L.LIST Get Data From Current Object
+	{
+           bacnet_Analog_Input_Present_Value_Set(2, ll2_current_item->data_value); // BACnet Send Over Bacnet
+	}
+        ll_free_item(ll2_current_item,ll2);						// Free the current Item					
+    }
+
+    if(!list_empty(&ll3.list)){								// L.LIST Check for Avaliable Data
+
+	list_for_each_entry(ll3_current_item,&ll3.list,list) 				// L.LIST Get Data From Current Object
+	{
+           bacnet_Analog_Input_Present_Value_Set(3, ll3_current_item->data_value); // BACnet Send Over Bacnet
+	}
+        ll_free_item(ll3_current_item,ll3);						// Free the current Item					
     }
 
     pthread_mutex_unlock(&list_lock);							// L.LIST Unlock the Thread
@@ -203,20 +243,23 @@ initialise:											// Label for goto
 
 		if (aquire<0)									// Aquired Values are less then 0
 		{
-			printf("Could not Pull Data From Server\n");				// Print Errror Message
+			fprintf(stderr,"Could not Pull Data From Server\n");			// Print Errror Message
 			modbus_free(ctx);							// Free Modbus Open Ports and IP
 			modbus_close(ctx);							// Close Modbus
 			goto initialise;							// Return to the label 'initialise'
 		}
 
 	//printf("Current I Value is %d \nCurrent Aquired Status is %d",i,aquire); //debug
-
 		for (i = 0; i < aquire; i++)
 		{
 			ll_add_to_tail(&ll, j[i]);
-			printf("reg[%d]=%d (0x%X)\n", i, j[i], j[i]);
+			if (i==0){ll_add_to_tail(&ll0, j[i]);}				// Add the value in the j buffer to one of the lists
+			else if (i==1){ll_add_to_tail(&ll1, j[i]);}	
+			else if (i==2){ll_add_to_tail(&ll2, j[i]);}
+			else if (i==3){ll_add_to_tail(&ll3, j[i]);}
+			printf("List %d: reg[%d]=%d (0x%X)\n",i, i, j[i], j[i]);		// Tell User the list, counter and value as integer and hex
 		}
-
+		
 	
 		modbus_close(ctx);								// Close Connection
 		modbus_free(ctx);								// Free IP and Port
@@ -305,7 +348,7 @@ int main(int argc, char **argv) {								// Main Function, Execution will begin 
     bacnet_bip_set_port(htons(BACNET_PORT));							// BACnet Convert to Network Style IP and Set IP 
     bacnet_datalink_set(BACNET_DATALINK_TYPE);							// BACnet Set the Datalink Type
     bacnet_datalink_init(BACNET_INTERFACE);							// BACnet Set the Interface Type
-    atexit(bacnet_datalink_cleanup);								// BACnet Run bacnet_datalink_cleanup when program is terminated // Put LList Clean Here
+    atexit(bacnet_datalink_cleanup);								// BACnet Run bacnet_datalink_cleanup when program is terminated 
     memset(&src, 0, sizeof(src));								// BACnet Fill src memory with 0
 
     register_with_bbmd();									// BACnet Register on the BBMD (TTL is 60)
@@ -318,6 +361,11 @@ int main(int argc, char **argv) {								// Main Function, Execution will begin 
 
   
     INIT_LIST_HEAD(&ll.list);									// L.LIST Initialise the List
+
+    INIT_LIST_HEAD(&ll0.list);									// L.LIST Initialise the 1st List
+    INIT_LIST_HEAD(&ll1.list);									// L.LIST Initialise the 2nd List
+    INIT_LIST_HEAD(&ll2.list);									// L.LIST Initialise the 3rd List
+    INIT_LIST_HEAD(&ll3.list);									// L.LIST Initialise the 4th List
 
     while (1) {
 	pdu_len = bacnet_datalink_receive(							// Set Packet Data Unit Length

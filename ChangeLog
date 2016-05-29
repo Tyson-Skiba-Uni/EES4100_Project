@@ -1,3 +1,10 @@
+----     29th of May 2016 Small Adjusments ----
+
+* Uniform Indenting
+* Set Modbus update interval to 100ms
+* Screenshot of Working Bridge
+* Created Tarball
+
 ----     23rd of May 2016 Quad L. List     ----
 
 * Updates alot of print to fprint for stderr

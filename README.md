@@ -3,12 +3,8 @@ Victoria University Project
 
 ###Currently Underway 
 
-Todays Focus is
-* Linked List as an Array
-
-Nightly
-* Project is Complete
-* Linked List is Messy needs Fixing
+This Program works but does not utilise linked lists in an Array yet...
+The Archive (Tarball) Version of this Program can be found in the release section
 
 ##Installation
 
@@ -20,7 +16,7 @@ $ ./bootstrap.sh
 
 ###Part Three is Now Complete
 
-![alt tag](https://raw.githubusercontent.com/Tyson-Skiba-Uni/EES4100_Project/master/Images/partThree.png)
-BACnet Server and Modbus Client Running Togheter
+![alt tag](https://raw.githubusercontent.com/Tyson-Skiba-Uni/EES4100_Project/master/Images/Final.png)
+Needle and Haystack Have a Match!!!
 
 **Tyson Skiba 2016**

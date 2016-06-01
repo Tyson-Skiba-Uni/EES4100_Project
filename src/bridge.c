@@ -1,5 +1,5 @@
 // Tyson Skiba 2016
-// BACnet Server with MODbus Client | ProjectPart6 QuadLinkedList
+// BACnet Server with MODbus Client | ProjectPart6 QuadLinkedList // Bacnet looses every second value
 
 #include <stdio.h>							// Standard Input Output Library
 #include <libbacnet/address.h>						// BACnet Libraries
@@ -38,7 +38,7 @@
 #define BACNET_BBMD_TTL		    90					// BACnet Time to Live set to 90 seconds
 #endif
 
-									//MODbus Define
+									// MODbus Define
 
 #define MODBUS_SERVER_ADR	"127.0.0.1"				// Modbus server location (local)
 #define MODBUS_SERVER_PORT	502					// Modbus port
@@ -51,8 +51,7 @@ struct linked_list							// L.LIST Structure to Hold List Elements
   int data_value;							// L.LIST Object Data 
 };
 
-struct linked_list ll;							// L.LIST Create Initial Object
-struct linked_list *ll_current_item;					// L.LIST Create Pointer to the Current Item
+
 
 
 struct linked_list ll0;							// L.LIST Create Initial Object
@@ -64,19 +63,15 @@ struct linked_list *ll2_current_item;					// L.LIST Create Pointer to the Curren
 struct linked_list ll3;							// L.LIST Create Initial Object
 struct linked_list *ll3_current_item;					// L.LIST Create Pointer to the Current Item
 
-static void
-ll_free_item (struct linked_list *item, struct linked_list ll_list)
+static void ll_free_item (struct linked_list *item, struct linked_list ll_list, int ins)
 {									// L.LIST Function to Delete Element
   item = list_entry (ll_list.list.next, struct linked_list, list);	// Get the target element
+  bacnet_Analog_Input_Present_Value_Set (ins, item->data_value);	// BACnet Send Over Bacnet
+  printf("Instance %d Sending data 0x%X\n",ins,item->data_value);
+  //printf("\n\nPresent Value is 0x%X\n\n",item->data_value);
   list_del (&item->list);						// Remove using this function
   free (item);								// Free memory
 }
-
-static uint16_t test_data[] = {						// Define a static test data array
-  0xA4EC, 0x6E39, 0x8740, 0x1065, 0x9134, 0xFC8C
-};									// Test data to provide to client
-
-#define NUM_TEST_DATA (sizeof(test_data)/sizeof(test_data[0]))
 
 static pthread_mutex_t timer_lock = PTHREAD_MUTEX_INITIALIZER;		// Timer Lock
 static pthread_mutex_t list_lock = PTHREAD_MUTEX_INITIALIZER;		// List Lock
@@ -102,63 +97,39 @@ ll_add_to_tail (struct linked_list *ptr, int data_value)		// L.LIST Function to 
 static int
 Update_Analog_Input_Read_Property (BACNET_READ_PROPERTY_DATA * rpdata)
 {									// Function for Analogue Input
-
-  static int index;							// Initialise Index Value
   int instance_no = bacnet_Analog_Input_Instance_To_Index (rpdata->object_instance);	// Get Instance Number from rpdata.object 
-
+  if (instance_no)
   if (rpdata->object_property != bacnet_PROP_PRESENT_VALUE)
     goto not_pv;							// If present value does not equal the data from rpdata go to -->
 
-  printf ("Instance %i: \n", instance_no);				// Print String to STDOUT
+  //printf ("Instance %i: \n", instance_no);				// Print String to STDOUT
  
   pthread_mutex_lock (&list_lock);					// L.LIST Lock Thread to prevent possible modification while read
 									// for loop here for 4 linked list
-  if (!list_empty (&ll0.list))
+ if (!list_empty (&ll0.list))
     {									// L.LIST Check for Avaliable Data
-
-      list_for_each_entry (ll0_current_item, &ll0.list, list)		// L.LIST Get Data From Current Object
-      {
-	bacnet_Analog_Input_Present_Value_Set (0, ll0_current_item->data_value);	// BACnet Send Over Bacnet
-      }
-      ll_free_item (ll0_current_item, ll0);				// Free the current Item                                        
+      ll_free_item (ll0_current_item, ll0,0);				// Free the current Item                                        
     }
 
   if (!list_empty (&ll1.list))
     {									// L.LIST Check for Avaliable Data
-
-      list_for_each_entry (ll1_current_item, &ll1.list, list)		// L.LIST Get Data From Current Object
-      {
-	bacnet_Analog_Input_Present_Value_Set (1, ll1_current_item->data_value);	// BACnet Send Over Bacnet
-      }
-      ll_free_item (ll1_current_item, ll1);				// Free the current Item
-      printf ("Printed and Freed %d\n", instance_no);
+      ll_free_item (ll1_current_item, ll1,1);				// Free the current Item
     }
 
-  if (!list_empty (&ll2.list))
+   if (!list_empty (&ll2.list))
     {									// L.LIST Check for Avaliable Data
-
-      list_for_each_entry (ll2_current_item, &ll2.list, list)		// L.LIST Get Data From Current Object
-      {
-	bacnet_Analog_Input_Present_Value_Set (2, ll2_current_item->data_value);	// BACnet Send Over Bacnet
-      }
-      ll_free_item (ll2_current_item, ll2);				// Free the current Item                                        
+      ll_free_item (ll2_current_item, ll2,2);				// Free the current Item                                        
     }
 
   if (!list_empty (&ll3.list))
     {									// L.LIST Check for Avaliable Data
 
-      list_for_each_entry (ll3_current_item, &ll3.list, list)		// L.LIST Get Data From Current Object
-      {
-	bacnet_Analog_Input_Present_Value_Set (3, ll3_current_item->data_value);	// BACnet Send Over Bacnet
-      }
-      ll_free_item (ll3_current_item, ll3);				// Free the current Item                                        
+      ll_free_item (ll3_current_item, ll3,3);				// Free the current Item                                        
     }
 
   pthread_mutex_unlock (&list_lock);					// L.LIST Unlock the Thread
 
-
-  if (index == NUM_TEST_DATA)
-    index = 0;
+printf("\nLOOP\n");
 
 not_pv:									// <------ Here
   return bacnet_Analog_Input_Read_Property (rpdata);			// Return the Data
@@ -247,6 +218,7 @@ MODBUS_client (void *arg)
 	  printf ("Connection has been Established\n");			// Tell User Connection has been Made
 	}
 
+     while(1){								// Aquiring Ever Lopp
       aquire = modbus_read_registers (ctx, 34, 4, j);			// Aquire will be negative if there is an error
 
       if (aquire < 0)							// Aquired Values are less then 0
@@ -259,7 +231,7 @@ MODBUS_client (void *arg)
 
       for (i = 0; i < aquire; i++)                                      // This will loop 4 times increasing i with each loop
 	{
-	  ll_add_to_tail (&ll, j[i]);					
+	  //ll_add_to_tail (&ll, j[i]);					
 	  if (i == 0)							// If the i value is 0
 	    {
 	      ll_add_to_tail (&ll0, j[i]);				// Add value in the j buffer to the base of the list
@@ -278,11 +250,9 @@ MODBUS_client (void *arg)
 	    }
 	  printf ("List %d: reg[%d]=%d (0x%X)\n", i, i, j[i], j[i]);	// Tell User the list, counter and value as integer and hex
 	}
+        usleep (100000);						// Sleep for 100 ms on Final Project 
+       }
 
-
-      modbus_close (ctx);						// Close Connection
-      modbus_free (ctx);						// Free IP and Port
-      usleep (100000);							// Sleep for 100 ms on Final Project 
     }
   return NULL;								// Nothing to return
 }
@@ -367,7 +337,7 @@ main (int argc, char **argv)
   pthread_create (&MODBUS_client_thread, 0, MODBUS_client, NULL);	// MODbus Create its Thread
 
 
-  INIT_LIST_HEAD (&ll.list);						// L.LIST Initialise the List
+  //INIT_LIST_HEAD (&ll.list);						// L.LIST Initialise the List
 
   INIT_LIST_HEAD (&ll0.list);						// L.LIST Initialise the 1st List
   INIT_LIST_HEAD (&ll1.list);						// L.LIST Initialise the 2nd List

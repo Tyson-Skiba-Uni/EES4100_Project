@@ -1,4 +1,4 @@
-Instalation
+Installation
 ======
 
 ###From GIT
@@ -12,7 +12,7 @@ $ ./bootstrap.sh
 
 ###From Tar
 ```sh
-$ wget www.adress.of.tar.gz
+$ wget https://github.com/Tyson-Skiba-Uni/EES4100_Project/releases/download/1/bridge-0.2a.tar.gz
 $ tar -xvf EES4100_Project.tar.gz
 $ cd ./EES4100_Project
 $ ./bootsrap.sh

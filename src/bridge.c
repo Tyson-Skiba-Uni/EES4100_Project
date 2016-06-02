@@ -1,6 +1,5 @@
 // Tyson Skiba 2016
-// BACnet Server with MODbus Client | ProjectPart6 QuadLinkedList // Bacnet looses every second value
-
+// BACnet Server with MODbus Client | Project Complete
 #include <stdio.h>							// Standard Input Output Library
 #include <libbacnet/address.h>						// BACnet Libraries
 #include <libbacnet/device.h>
@@ -34,16 +33,16 @@
 
 #if RUN_AS_BBMD_CLIENT
 #define BACNET_BBMD_PORT	    0xBAC0				// BACnet Port 0
-#define BACNET_BBMD_ADDRESS	    "127.0.0.1"				// BACnet Broadcast Table IP Address is Local Host
+#define BACNET_BBMD_ADDRESS	    "140.159.160.7"			// BACnet Broadcast Table IP Address is Local Host
 #define BACNET_BBMD_TTL		    90					// BACnet Time to Live set to 90 seconds
 #endif
 
 									// MODbus Define
 
-#define MODBUS_SERVER_ADR	"127.0.0.1"				// Modbus server location (local)
+#define MODBUS_SERVER_ADR	"140.159.153.159"			// Modbus server location (local)
 #define MODBUS_SERVER_PORT	502					// Modbus port
 #define MODBUS_DEVICE_ID	34					// Modbus Device as Provided by Kim (12 testing,34 ME)
-#define MODBUS_DEVICE_INST	3					// Modbus Device Instances as Provided by Kim
+#define MODBUS_DEVICE_INST	4					// Modbus Device Instances as Provided by Kim
 
 struct linked_list							// L.LIST Structure to Hold List Elements
 {									// L.LIST Structure with 2 members
@@ -51,24 +50,14 @@ struct linked_list							// L.LIST Structure to Hold List Elements
   int data_value;							// L.LIST Object Data 
 };
 
+struct list_head ll[MODBUS_DEVICE_INST];
 
-
-
-struct linked_list ll0;							// L.LIST Create Initial Object
-struct linked_list *ll0_current_item;					// L.LIST Create Pointer to the Current Item
-struct linked_list ll1;							// L.LIST Create Initial Object
-struct linked_list *ll1_current_item;					// L.LIST Create Pointer to the Current Item
-struct linked_list ll2;							// L.LIST Create Initial Object
-struct linked_list *ll2_current_item;					// L.LIST Create Pointer to the Current Item
-struct linked_list ll3;							// L.LIST Create Initial Object
-struct linked_list *ll3_current_item;					// L.LIST Create Pointer to the Current Item
-
-static void ll_free_item (struct linked_list *item, struct linked_list ll_list, int ins)
+static void ll_free_item (struct list_head *ll_list, int ins)
 {									// L.LIST Function to Delete Element
-  item = list_entry (ll_list.list.next, struct linked_list, list);	// Get the target element
+  struct linked_list *item;
+  item = list_entry (ll_list->next, struct linked_list, list);		// Get the target element
   bacnet_Analog_Input_Present_Value_Set (ins, item->data_value);	// BACnet Send Over Bacnet
-  printf("Instance %d Sending data 0x%X\n",ins,item->data_value);
-  //printf("\n\nPresent Value is 0x%X\n\n",item->data_value);
+  //printf("Instance %d Sending data 0x%X\n",ins,item->data_value);	// Debug
   list_del (&item->list);						// Remove using this function
   free (item);								// Free memory
 }
@@ -78,7 +67,7 @@ static pthread_mutex_t list_lock = PTHREAD_MUTEX_INITIALIZER;		// List Lock
 static pthread_cond_t list_data_ready = PTHREAD_COND_INITIALIZER;	// Condition Signaling Data Avaliable
 
 static void
-ll_add_to_tail (struct linked_list *ptr, int data_value)		// L.LIST Function to Add Data to Base of List          
+ll_add_to_tail (struct list_head *ptr, int data_value)			// L.LIST Function to Add Data to Base of List          
 {
   struct linked_list *tmp;						// Create a new Structure Called tmp
   tmp = (struct linked_list *) malloc (sizeof (struct linked_list));	// Allocate Memory, retrun a value into tmp
@@ -89,7 +78,7 @@ ll_add_to_tail (struct linked_list *ptr, int data_value)		// L.LIST Function to 
     }
   tmp->data_value = data_value;						// The Element is now the value of the data_value input
   pthread_mutex_lock (&list_lock);					// Lock Thread to prevent data corruption
-  list_add_tail (&(tmp->list), &(ptr->list));				// Add data to bottom of the list
+  list_add_tail (&tmp->list, ptr);					// Add data to bottom of the list
   pthread_mutex_unlock (&list_lock);					// Unlock thread
   pthread_cond_signal (&list_data_ready);				// Signal that Data is avaliable
 }
@@ -98,7 +87,7 @@ static int
 Update_Analog_Input_Read_Property (BACNET_READ_PROPERTY_DATA * rpdata)
 {									// Function for Analogue Input
   int instance_no = bacnet_Analog_Input_Instance_To_Index (rpdata->object_instance);	// Get Instance Number from rpdata.object 
-  if (instance_no)
+  //if (instance_no)
   if (rpdata->object_property != bacnet_PROP_PRESENT_VALUE)
     goto not_pv;							// If present value does not equal the data from rpdata go to -->
 
@@ -106,25 +95,9 @@ Update_Analog_Input_Read_Property (BACNET_READ_PROPERTY_DATA * rpdata)
  
   pthread_mutex_lock (&list_lock);					// L.LIST Lock Thread to prevent possible modification while read
 									// for loop here for 4 linked list
- if (!list_empty (&ll0.list))
+  if (!list_empty (&ll[instance_no]))
     {									// L.LIST Check for Avaliable Data
-      ll_free_item (ll0_current_item, ll0,0);				// Free the current Item                                        
-    }
-
-  if (!list_empty (&ll1.list))
-    {									// L.LIST Check for Avaliable Data
-      ll_free_item (ll1_current_item, ll1,1);				// Free the current Item
-    }
-
-   if (!list_empty (&ll2.list))
-    {									// L.LIST Check for Avaliable Data
-      ll_free_item (ll2_current_item, ll2,2);				// Free the current Item                                        
-    }
-
-  if (!list_empty (&ll3.list))
-    {									// L.LIST Check for Avaliable Data
-
-      ll_free_item (ll3_current_item, ll3,3);				// Free the current Item                                        
+      ll_free_item (&ll[instance_no], instance_no);				// Free the current Item                                        
     }
 
   pthread_mutex_unlock (&list_lock);					// L.LIST Unlock the Thread
@@ -231,23 +204,7 @@ MODBUS_client (void *arg)
 
       for (i = 0; i < aquire; i++)                                      // This will loop 4 times increasing i with each loop
 	{
-	  //ll_add_to_tail (&ll, j[i]);					
-	  if (i == 0)							// If the i value is 0
-	    {
-	      ll_add_to_tail (&ll0, j[i]);				// Add value in the j buffer to the base of the list
-	    }			
-	  else if (i == 1)						// If the i value is 1
-	    {
-	      ll_add_to_tail (&ll1, j[i]);				// Add value in the j buffer to the base of the list
-	    }
-	  else if (i == 2)						// If the i value is 2
-	    {
-	      ll_add_to_tail (&ll2, j[i]);        			// Add value in the j buffer to the base of the list
-	    }
-	  else if (i == 3)						// If the i value is 3
-	    {
-	      ll_add_to_tail (&ll3, j[i]);				// Add value in the j buffer to the base of the list
-	    }
+	  ll_add_to_tail(&ll[i], j[i]);
 	  printf ("List %d: reg[%d]=%d (0x%X)\n", i, i, j[i], j[i]);	// Tell User the list, counter and value as integer and hex
 	}
         usleep (100000);						// Sleep for 100 ms on Final Project 
@@ -308,6 +265,7 @@ ms_tick (void)
 int
 main (int argc, char **argv)
 {									// Main Function, Execution will begin here 
+  int i;
   uint8_t rx_buf[bacnet_MAX_MPDU];					// BACnet Initialise recieved data buffer
   uint16_t pdu_len;							// BACnet Initialise pdu length
   BACNET_ADDRESS src;
@@ -332,17 +290,13 @@ main (int argc, char **argv)
 
   bacnet_Send_I_Am (bacnet_Handler_Transmit_Buffer);			// BACnet Send out I AM
 
+  for (i = 0; i < MODBUS_DEVICE_INST; i++) {
+    INIT_LIST_HEAD(&ll[i]);
+  }
+
   pthread_create (&minute_tick_id, 0, minute_tick, NULL);		// BACnet Create the minute thread
   pthread_create (&second_tick_id, 0, second_tick, NULL);		// BACnet Create the second thread
   pthread_create (&MODBUS_client_thread, 0, MODBUS_client, NULL);	// MODbus Create its Thread
-
-
-  //INIT_LIST_HEAD (&ll.list);						// L.LIST Initialise the List
-
-  INIT_LIST_HEAD (&ll0.list);						// L.LIST Initialise the 1st List
-  INIT_LIST_HEAD (&ll1.list);						// L.LIST Initialise the 2nd List
-  INIT_LIST_HEAD (&ll2.list);						// L.LIST Initialise the 3rd List
-  INIT_LIST_HEAD (&ll3.list);						// L.LIST Initialise the 4th List
 
   while (1)
     {
